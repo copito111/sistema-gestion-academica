@@ -1,10 +1,10 @@
 from almacenamiento.memoria import RepositorioEnMemoria
+from modelos.aprendiz import Aprendiz
 from modelos.profesor import Profesor
 from servicios.gestion_academica import GestionAcademica
 
 
 SECCIONES_PENDIENTES = {
-    "2": "Aprendices",
     "3": "Cursos",
     "4": "Inscripciones",
     "5": "Calificaciones e informes",
@@ -13,6 +13,13 @@ SECCIONES_PENDIENTES = {
 
 def leer(mensaje):
     return input(f"{mensaje}: ").strip()
+
+
+def leer_edad():
+    try:
+        return int(leer("Edad"))
+    except ValueError as error:
+        raise ValueError("La edad debe ser un número entero positivo.") from error
 
 
 def mostrar_lista(filas):
@@ -51,10 +58,7 @@ def ejecutar_menu(titulo, opciones, texto_salida="Volver"):
 def registrar_profesor(gestion):
     nombre = leer("Nombre")
     documento = leer("Documento")
-    try:
-        edad = int(leer("Edad"))
-    except ValueError as error:
-        raise ValueError("La edad debe ser un número entero positivo.") from error
+    edad = leer_edad()
 
     profesion = leer("Profesión")
     codigo = leer("Código de profesor")
@@ -79,10 +83,40 @@ def menu_profesores(gestion):
     }, texto_salida="Volver al menú principal")
 
 
+def registrar_aprendiz(gestion):
+    nombre = leer("Nombre")
+    documento = leer("Documento")
+    edad = leer_edad()
+    contacto = leer("Contacto (correo o teléfono)")
+
+    aprendiz = Aprendiz(nombre, documento, edad, contacto)
+    gestion.registrar_aprendiz(aprendiz)
+    print("Aprendiz registrado.")
+
+
+def buscar_aprendiz(gestion):
+    documento = leer("Documento")
+    aprendiz = gestion.buscar_aprendiz(documento)
+    print(aprendiz.mostrar_informacion())
+
+
+def menu_aprendices(gestion):
+    ejecutar_menu("Aprendices", {
+        "1": ("Registrar aprendiz", lambda: registrar_aprendiz(gestion)),
+        "2": ("Listar aprendices", lambda: mostrar_entidades(gestion.listar_aprendices())),
+        "3": ("Buscar por documento", lambda: buscar_aprendiz(gestion)),
+    }, texto_salida="Volver al menú principal")
+
+
 def main():
-    repositorio = RepositorioEnMemoria()
-    gestion = GestionAcademica(profesores=repositorio)
-    opciones = {"1": ("Profesores", lambda: menu_profesores(gestion))}
+    gestion = GestionAcademica(
+        profesores=RepositorioEnMemoria(),
+        aprendices=RepositorioEnMemoria(),
+    )
+    opciones = {
+        "1": ("Profesores", lambda: menu_profesores(gestion)),
+        "2": ("Aprendices", lambda: menu_aprendices(gestion)),
+    }
     for numero, nombre in SECCIONES_PENDIENTES.items():
         opciones[numero] = (nombre, lambda etapa=nombre: print(f"{etapa}: pendiente de implementar."))
 
