@@ -6,11 +6,6 @@ from modelos.profesor import Profesor
 from servicios.gestion_academica import GestionAcademica
 
 
-SECCIONES_PENDIENTES = {
-    "5": "Calificaciones e informes",
-}
-
-
 def leer(mensaje):
     return input(f"{mensaje}: ").strip()
 
@@ -183,6 +178,43 @@ def menu_inscripciones(gestion):
     }, texto_salida="Volver al menú principal")
 
 
+def registrar_nota(gestion, documento_profesor):
+    codigo = leer("Código del curso")
+    documento = leer("Documento del aprendiz")
+    valor = leer("Nota (0.0 a 5.0)")
+    gestion.registrar_nota(documento_profesor, documento, codigo, valor)
+    print("Nota registrada.")
+
+
+def modificar_nota(gestion, documento_profesor):
+    codigo = leer("Código del curso")
+    documento = leer("Documento del aprendiz")
+    try:
+        posicion = int(leer("Número de la nota"))
+    except ValueError as error:
+        raise ValueError("El número de la nota debe ser entero.") from error
+    valor = leer("Nueva nota (0.0 a 5.0)")
+    gestion.modificar_nota(documento_profesor, documento, codigo, posicion, valor)
+    print("Nota actualizada.")
+
+
+def consultar_notas(gestion, documento_profesor):
+    codigo = leer("Código del curso")
+    documento = leer("Documento del aprendiz")
+    notas = gestion.consultar_notas(documento_profesor, documento, codigo)
+    mostrar_lista(f"Nota {posicion}: {nota}" for posicion, nota in enumerate(notas, start=1))
+
+
+def menu_profesor(gestion):
+    profesor = gestion.buscar_profesor(leer("Documento del profesor"))
+    documento = profesor.documento
+    ejecutar_menu(f"Panel del profesor {profesor.nombre}", {
+        "1": ("Registrar nota", lambda: registrar_nota(gestion, documento)),
+        "2": ("Modificar nota", lambda: modificar_nota(gestion, documento)),
+        "3": ("Consultar notas de una inscripción", lambda: consultar_notas(gestion, documento)),
+    })
+
+
 def main():
     gestion = GestionAcademica(
         profesores=RepositorioEnMemoria(),
@@ -195,9 +227,8 @@ def main():
         "2": ("Aprendices", lambda: menu_aprendices(gestion)),
         "3": ("Cursos", lambda: menu_cursos(gestion)),
         "4": ("Inscripciones", lambda: menu_inscripciones(gestion)),
+        "5": ("Panel del profesor", lambda: menu_profesor(gestion)),
     }
-    for numero, nombre in SECCIONES_PENDIENTES.items():
-        opciones[numero] = (nombre, lambda etapa=nombre: print(f"{etapa}: pendiente de implementar."))
 
     try:
         ejecutar_menu("Sistema de gestión académica", opciones, texto_salida="Salir")

@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from almacenamiento.contratos import Repositorio
 from modelos.aprendiz import Aprendiz
 from modelos.curso import Curso
@@ -108,3 +110,27 @@ class GestionAcademica:
             inscripcion for inscripcion in self.__inscripciones.listar()
             if inscripcion.curso.codigo == curso.codigo
         )
+
+    def registrar_nota(self, documento_profesor, documento_aprendiz, codigo_curso, valor) -> None:
+        inscripcion = self.__inscripcion_editable(documento_profesor, documento_aprendiz, codigo_curso)
+        inscripcion.registrar_nota(valor)
+
+    def modificar_nota(self, documento_profesor, documento_aprendiz, codigo_curso, posicion, valor) -> None:
+        inscripcion = self.__inscripcion_editable(documento_profesor, documento_aprendiz, codigo_curso)
+        inscripcion.modificar_nota(posicion, valor)
+
+    def consultar_notas(self, documento_profesor, documento_aprendiz, codigo_curso) -> tuple[Decimal, ...]:
+        self.__verificar_profesor_del_curso(documento_profesor, codigo_curso)
+        return self.buscar_inscripcion(documento_aprendiz, codigo_curso).notas
+
+    def __verificar_profesor_del_curso(self, documento_profesor: str, codigo_curso: str) -> None:
+        curso = self.buscar_curso(codigo_curso)
+        if curso.profesor.documento != documento_profesor.strip():
+            raise ValueError("El curso no está asignado a ese profesor.")
+
+    def __inscripcion_editable(self, documento_profesor, documento_aprendiz, codigo_curso) -> Inscripcion:
+        self.__verificar_profesor_del_curso(documento_profesor, codigo_curso)
+        inscripcion = self.buscar_inscripcion(documento_aprendiz, codigo_curso)
+        if inscripcion.estado != "activa":
+            raise ValueError("Solo se pueden cambiar notas de inscripciones activas.")
+        return inscripcion
