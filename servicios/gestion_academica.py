@@ -123,6 +123,21 @@ class GestionAcademica:
         self.__verificar_profesor_del_curso(documento_profesor, codigo_curso)
         return self.buscar_inscripcion(documento_aprendiz, codigo_curso).notas
 
+    def inscripciones_para_profesor(
+        self, documento_profesor: str, codigo_curso: str,
+    ) -> tuple[Inscripcion, ...]:
+        self.__verificar_profesor_del_curso(documento_profesor, codigo_curso)
+        return self.inscripciones_del_curso(codigo_curso)
+
+    def inscripciones_de_aprendiz_para_profesor(
+        self, documento_profesor: str, documento_aprendiz: str,
+    ) -> tuple[Inscripcion, ...]:
+        profesor = self.buscar_profesor(documento_profesor)
+        return tuple(
+            inscripcion for inscripcion in self.inscripciones_del_aprendiz(documento_aprendiz)
+            if inscripcion.curso.profesor.documento == profesor.documento
+        )
+
     def __verificar_profesor_del_curso(self, documento_profesor: str, codigo_curso: str) -> None:
         curso = self.buscar_curso(codigo_curso)
         if curso.profesor.documento != documento_profesor.strip():

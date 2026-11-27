@@ -4,6 +4,7 @@ from modelos.curso import MODALIDADES
 from modelos.inscripcion import ESTADOS_INSCRIPCION
 from modelos.profesor import Profesor
 from servicios.gestion_academica import GestionAcademica
+from servicios.informes import resumen_academico
 
 
 def leer(mensaje):
@@ -205,6 +206,10 @@ def consultar_notas(gestion, documento_profesor):
     mostrar_lista(f"Nota {posicion}: {nota}" for posicion, nota in enumerate(notas, start=1))
 
 
+def mostrar_informe(inscripciones):
+    mostrar_lista(resumen_academico(inscripcion) for inscripcion in inscripciones)
+
+
 def menu_profesor(gestion):
     profesor = gestion.buscar_profesor(leer("Documento del profesor"))
     documento = profesor.documento
@@ -212,6 +217,16 @@ def menu_profesor(gestion):
         "1": ("Registrar nota", lambda: registrar_nota(gestion, documento)),
         "2": ("Modificar nota", lambda: modificar_nota(gestion, documento)),
         "3": ("Consultar notas de una inscripción", lambda: consultar_notas(gestion, documento)),
+        "4": ("Ver mis cursos", lambda: mostrar_entidades(gestion.cursos_del_profesor(documento))),
+        "5": ("Ver inscritos de un curso", lambda: mostrar_inscripciones(
+            gestion.inscripciones_para_profesor(documento, leer("Código del curso"))
+        )),
+        "6": ("Ver promedios e informe por curso", lambda: mostrar_informe(
+            gestion.inscripciones_para_profesor(documento, leer("Código del curso"))
+        )),
+        "7": ("Ver promedios e informe por aprendiz", lambda: mostrar_informe(
+            gestion.inscripciones_de_aprendiz_para_profesor(documento, leer("Documento del aprendiz"))
+        )),
     })
 
 
