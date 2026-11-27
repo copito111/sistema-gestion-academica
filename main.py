@@ -1,11 +1,11 @@
 from almacenamiento.memoria import RepositorioEnMemoria
 from modelos.aprendiz import Aprendiz
+from modelos.curso import MODALIDADES
 from modelos.profesor import Profesor
 from servicios.gestion_academica import GestionAcademica
 
 
 SECCIONES_PENDIENTES = {
-    "3": "Cursos",
     "4": "Inscripciones",
     "5": "Calificaciones e informes",
 }
@@ -108,14 +108,54 @@ def menu_aprendices(gestion):
     }, texto_salida="Volver al menú principal")
 
 
+def registrar_curso(gestion):
+    codigo = leer("Código del curso")
+    nombre = leer("Nombre")
+    descripcion = leer("Descripción")
+    try:
+        horas = int(leer("Duración en horas"))
+    except ValueError as error:
+        raise ValueError("La duración debe ser un número entero de horas mayor que cero.") from error
+
+    for clave, etiqueta in MODALIDADES.items():
+        print(f"{clave}. {etiqueta}")
+    modalidad = leer("Modalidad")
+    documento_profesor = leer("Documento del profesor responsable")
+
+    gestion.registrar_curso(codigo, nombre, descripcion, horas, modalidad, documento_profesor)
+    print("Curso registrado.")
+
+
+def buscar_curso(gestion):
+    codigo = leer("Código del curso")
+    curso = gestion.buscar_curso(codigo)
+    print(curso.mostrar_informacion())
+
+
+def consultar_cursos_del_profesor(gestion):
+    documento = leer("Documento del profesor")
+    mostrar_entidades(gestion.cursos_del_profesor(documento))
+
+
+def menu_cursos(gestion):
+    ejecutar_menu("Cursos", {
+        "1": ("Registrar curso y asignar profesor", lambda: registrar_curso(gestion)),
+        "2": ("Listar cursos", lambda: mostrar_entidades(gestion.listar_cursos())),
+        "3": ("Buscar por código", lambda: buscar_curso(gestion)),
+        "4": ("Consultar por profesor", lambda: consultar_cursos_del_profesor(gestion)),
+    }, texto_salida="Volver al menú principal")
+
+
 def main():
     gestion = GestionAcademica(
         profesores=RepositorioEnMemoria(),
         aprendices=RepositorioEnMemoria(),
+        cursos=RepositorioEnMemoria(),
     )
     opciones = {
         "1": ("Profesores", lambda: menu_profesores(gestion)),
         "2": ("Aprendices", lambda: menu_aprendices(gestion)),
+        "3": ("Cursos", lambda: menu_cursos(gestion)),
     }
     for numero, nombre in SECCIONES_PENDIENTES.items():
         opciones[numero] = (nombre, lambda etapa=nombre: print(f"{etapa}: pendiente de implementar."))
