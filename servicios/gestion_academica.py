@@ -1,6 +1,7 @@
 from almacenamiento.contratos import Repositorio
 from modelos.aprendiz import Aprendiz
 from modelos.curso import Curso
+from modelos.inscripcion import Inscripcion
 from modelos.profesor import Profesor
 
 
@@ -10,10 +11,12 @@ class GestionAcademica:
         profesores: Repositorio[str, Profesor],
         aprendices: Repositorio[str, Aprendiz],
         cursos: Repositorio[str, Curso],
+        inscripciones: Repositorio[tuple[str, str], Inscripcion],
     ):
         self.__profesores = profesores
         self.__aprendices = aprendices
         self.__cursos = cursos
+        self.__inscripciones = inscripciones
 
     def registrar_profesor(self, profesor: Profesor) -> None:
         if self.__profesores.buscar(profesor.documento) is not None:
@@ -69,4 +72,39 @@ class GestionAcademica:
         return tuple(
             curso for curso in self.listar_cursos()
             if curso.profesor.documento == profesor.documento
+        )
+
+    def inscribir(self, documento_aprendiz: str, codigo_curso: str) -> None:
+        aprendiz = self.buscar_aprendiz(documento_aprendiz)
+        curso = self.buscar_curso(codigo_curso)
+        clave = (aprendiz.documento, curso.codigo)
+        if self.__inscripciones.buscar(clave) is not None:
+            raise ValueError("Este aprendiz ya tiene una inscripción en el curso.")
+        self.__inscripciones.guardar(clave, Inscripcion(aprendiz, curso))
+
+    def buscar_inscripcion(self, documento_aprendiz: str, codigo_curso: str) -> Inscripcion:
+        clave = (documento_aprendiz.strip(), codigo_curso.strip())
+        inscripcion = self.__inscripciones.buscar(clave)
+        if inscripcion is None:
+            raise ValueError("Inscripción no encontrada.")
+        return inscripcion
+
+    def cambiar_estado_inscripcion(
+        self, documento_aprendiz: str, codigo_curso: str, estado: str,
+    ) -> None:
+        inscripcion = self.buscar_inscripcion(documento_aprendiz, codigo_curso)
+        inscripcion.cambiar_estado(estado)
+
+    def inscripciones_del_aprendiz(self, documento: str) -> tuple[Inscripcion, ...]:
+        aprendiz = self.buscar_aprendiz(documento)
+        return tuple(
+            inscripcion for inscripcion in self.__inscripciones.listar()
+            if inscripcion.aprendiz.documento == aprendiz.documento
+        )
+
+    def inscripciones_del_curso(self, codigo: str) -> tuple[Inscripcion, ...]:
+        curso = self.buscar_curso(codigo)
+        return tuple(
+            inscripcion for inscripcion in self.__inscripciones.listar()
+            if inscripcion.curso.codigo == curso.codigo
         )

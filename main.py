@@ -1,12 +1,12 @@
 from almacenamiento.memoria import RepositorioEnMemoria
 from modelos.aprendiz import Aprendiz
 from modelos.curso import MODALIDADES
+from modelos.inscripcion import ESTADOS_INSCRIPCION
 from modelos.profesor import Profesor
 from servicios.gestion_academica import GestionAcademica
 
 
 SECCIONES_PENDIENTES = {
-    "4": "Inscripciones",
     "5": "Calificaciones e informes",
 }
 
@@ -146,16 +146,55 @@ def menu_cursos(gestion):
     }, texto_salida="Volver al menú principal")
 
 
+def registrar_inscripcion(gestion):
+    documento = leer("Documento del aprendiz")
+    codigo = leer("Código del curso")
+    gestion.inscribir(documento, codigo)
+    print("Inscripción registrada.")
+
+
+def cambiar_estado(gestion):
+    documento = leer("Documento del aprendiz")
+    codigo = leer("Código del curso")
+    estado = leer(f"Estado ({' o '.join(ESTADOS_INSCRIPCION)})").lower()
+    gestion.cambiar_estado_inscripcion(documento, codigo, estado)
+    print("Estado actualizado.")
+
+
+def mostrar_inscripciones(inscripciones):
+    mostrar_lista(
+        f"{inscripcion.aprendiz.nombre} ({inscripcion.aprendiz.documento}) | "
+        f"{inscripcion.curso.nombre} ({inscripcion.curso.codigo}) | "
+        f"{inscripcion.fecha.isoformat()} | {inscripcion.estado}"
+        for inscripcion in inscripciones
+    )
+
+
+def menu_inscripciones(gestion):
+    ejecutar_menu("Inscripciones", {
+        "1": ("Registrar inscripción", lambda: registrar_inscripcion(gestion)),
+        "2": ("Cambiar estado", lambda: cambiar_estado(gestion)),
+        "3": ("Cursos de un aprendiz", lambda: mostrar_inscripciones(
+            gestion.inscripciones_del_aprendiz(leer("Documento del aprendiz"))
+        )),
+        "4": ("Aprendices inscritos en un curso", lambda: mostrar_inscripciones(
+            gestion.inscripciones_del_curso(leer("Código del curso"))
+        )),
+    }, texto_salida="Volver al menú principal")
+
+
 def main():
     gestion = GestionAcademica(
         profesores=RepositorioEnMemoria(),
         aprendices=RepositorioEnMemoria(),
         cursos=RepositorioEnMemoria(),
+        inscripciones=RepositorioEnMemoria(),
     )
     opciones = {
         "1": ("Profesores", lambda: menu_profesores(gestion)),
         "2": ("Aprendices", lambda: menu_aprendices(gestion)),
         "3": ("Cursos", lambda: menu_cursos(gestion)),
+        "4": ("Inscripciones", lambda: menu_inscripciones(gestion)),
     }
     for numero, nombre in SECCIONES_PENDIENTES.items():
         opciones[numero] = (nombre, lambda etapa=nombre: print(f"{etapa}: pendiente de implementar."))
